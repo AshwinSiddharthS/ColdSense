@@ -1,0 +1,8 @@
+[
+  { "id": "ALT-100", "shipmentId": "SHIP-001", "deviceId": "ESP32-A1B2", "type": "temp_high", "message": "Temperature exceeded upper threshold (-60°C)", "value": -58.2, "threshold": -60, "resolved": false, "createdAt": "2026-08-29T09:00:00Z" },
+  { "id": "ALT-101", "shipmentId": "SHIP-004", "deviceId": "ESP32-G7H8", "type": "temp_high", "message": "Temperature breached upper limit (8°C) — possible refrigerator failure", "value": 10.2, "threshold": 8, "resolved": false, "createdAt": "2026-08-29T10:28:00Z" },
+  { "id": "ALT-102", "shipmentId": "SHIP-002", "deviceId": "ESP32-C3D4", "type": "disconnect", "message": "Device offline for more than 30 minutes", "value": null, "threshold": null, "resolved": false, "createdAt": "2026-08-29T08:40:00Z" },
+  { "id": "ALT-099", "shipmentId": "SHIP-003", "deviceId": "ESP32-E5F6", "type": "disconnect", "message": "Device disconnected for more than 5 minutes during transit", "value": null, "threshold": null, "resolved": true, "createdAt": "2026-08-27T14:20:00Z" },
+  { "id": "ALT-098", "shipmentId": "SHIP-003", "deviceId": "ESP32-E5F6", "type": "temp_low", "message": "Temperature dropped below lower threshold (-25°C)", "value": -27.1, "threshold": -25, "resolved": true, "createdAt": "2026-08-26T22:10:00Z" },
+  { "id": "ALT-097", "shipmentId": "SHIP-001", "deviceId": "ESP32-A1B2", "type": "no_data", "message": "No sensor data received for 15 minutes", "value": null, "threshold": null, "resolved": true, "createdAt": "2026-08-28T03:15:00Z" }
+]

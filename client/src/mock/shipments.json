@@ -1,0 +1,72 @@
+[
+  {
+    "id": "SHIP-001",
+    "origin": "Mumbai Central Depot",
+    "destination": "Delhi Distribution Hub",
+    "vaccineType": "Pfizer-BioNTech (mRNA)",
+    "tempRange": { "min": -80, "max": -60 },
+    "status": "in-transit",
+    "deviceId": "ESP32-A1B2",
+    "createdBy": "admin@coldchain.in",
+    "createdAt": "2026-08-27T10:00:00Z",
+    "updatedAt": "2026-08-29T09:00:00Z",
+    "estimatedArrival": "2026-08-30T18:00:00Z",
+    "doses": 5000
+  },
+  {
+    "id": "SHIP-002",
+    "origin": "Bangalore Cold Storage",
+    "destination": "Chennai AIIMS Clinic",
+    "vaccineType": "Covishield (AZ)",
+    "tempRange": { "min": 2, "max": 8 },
+    "status": "pending",
+    "deviceId": "ESP32-C3D4",
+    "createdBy": "operator1@coldchain.in",
+    "createdAt": "2026-08-28T09:00:00Z",
+    "updatedAt": "2026-08-28T09:00:00Z",
+    "estimatedArrival": "2026-08-29T20:00:00Z",
+    "doses": 12000
+  },
+  {
+    "id": "SHIP-003",
+    "origin": "Pune Regional Depot",
+    "destination": "Nagpur General Hospital",
+    "vaccineType": "Moderna (mRNA-1273)",
+    "tempRange": { "min": -25, "max": -15 },
+    "status": "delivered",
+    "deviceId": "ESP32-E5F6",
+    "createdBy": "admin@coldchain.in",
+    "createdAt": "2026-08-25T08:00:00Z",
+    "updatedAt": "2026-08-27T16:30:00Z",
+    "estimatedArrival": "2026-08-27T17:00:00Z",
+    "doses": 3200
+  },
+  {
+    "id": "SHIP-004",
+    "origin": "Kolkata Bio-Pharma Hub",
+    "destination": "Bhubaneswar District Hospital",
+    "vaccineType": "Covaxin (BBV152)",
+    "tempRange": { "min": 2, "max": 8 },
+    "status": "alert",
+    "deviceId": "ESP32-G7H8",
+    "createdBy": "operator2@coldchain.in",
+    "createdAt": "2026-08-29T06:00:00Z",
+    "updatedAt": "2026-08-29T10:30:00Z",
+    "estimatedArrival": "2026-08-29T22:00:00Z",
+    "doses": 7500
+  },
+  {
+    "id": "SHIP-005",
+    "origin": "Hyderabad Cold Storage",
+    "destination": "Vijayawada Primary Care",
+    "vaccineType": "JNJ-78436735 (Janssen)",
+    "tempRange": { "min": 2, "max": 8 },
+    "status": "in-transit",
+    "deviceId": "ESP32-I9J0",
+    "createdBy": "admin@coldchain.in",
+    "createdAt": "2026-08-29T07:00:00Z",
+    "updatedAt": "2026-08-29T09:30:00Z",
+    "estimatedArrival": "2026-08-29T23:00:00Z",
+    "doses": 9000
+  }
+]

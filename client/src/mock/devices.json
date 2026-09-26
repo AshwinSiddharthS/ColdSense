@@ -1,0 +1,8 @@
+[
+  { "id": "ESP32-A1B2", "name": "Truck 1 Cryo Sensor", "status": "online", "lastSeenAt": "2026-08-29T10:58:00Z", "assignedShipmentId": "SHIP-001", "firmware": "v2.1.3", "battery": 82, "signalStrength": -55 },
+  { "id": "ESP32-C3D4", "name": "Cooler Unit B", "status": "offline", "lastSeenAt": "2026-08-29T08:10:00Z", "assignedShipmentId": "SHIP-002", "firmware": "v2.0.9", "battery": 41, "signalStrength": null },
+  { "id": "ESP32-E5F6", "name": "Van 3 Ambient Sensor", "status": "disabled", "lastSeenAt": "2026-08-27T16:20:00Z", "assignedShipmentId": "SHIP-003", "firmware": "v2.1.0", "battery": 15, "signalStrength": null },
+  { "id": "ESP32-G7H8", "name": "Refrigerated Truck 7", "status": "online", "lastSeenAt": "2026-08-29T11:00:00Z", "assignedShipmentId": "SHIP-004", "firmware": "v2.1.3", "battery": 67, "signalStrength": -62 },
+  { "id": "ESP32-I9J0", "name": "Cold Box Unit C", "status": "online", "lastSeenAt": "2026-08-29T10:55:00Z", "assignedShipmentId": "SHIP-005", "firmware": "v2.1.2", "battery": 91, "signalStrength": -48 },
+  { "id": "ESP32-K1L2", "name": "Spare Sensor Alpha", "status": "offline", "lastSeenAt": "2026-08-20T09:00:00Z", "assignedShipmentId": null, "firmware": "v1.9.5", "battery": 100, "signalStrength": null }
+]
