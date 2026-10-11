@@ -1,0 +1,22 @@
+# ── Render Blueprint ─────────────────────────────────────
+# Deploy: connect this repo on render.com, set Root Directory to "server"
+# Or use this file for Render Blueprints (Infrastructure as Code)
+
+services:
+  - type: web
+    name: coldsense-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false          # set manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false          # set manually in Render dashboard
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: CLIENT_ORIGIN
+        sync: false          # set to your Vercel frontend URL
