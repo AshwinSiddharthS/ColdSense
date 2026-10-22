@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 
 /**
  * Connect to MongoDB.
- * Reads MONGO_URI from environment (set in .env via dotenv).
- * In development, if MongoDB is unreachable (e.g. Atlas IP not whitelisted or no local mongod),
- * falls back to the resilient local persistent file database without crashing.
+ * Reads MONGO_URI from environment.
+ * If MongoDB is unreachable or unconfigured, gracefully falls back
+ * to the persistent local disk storage (data/readings.json) without crashing the server.
  */
 async function connectDB() {
   const uri = process.env.MONGO_URI;
@@ -14,18 +14,14 @@ async function connectDB() {
   }
 
   try {
-    // 5 second timeout to avoid blocking server boot when network is restricted
+    // 5-second timeout to avoid blocking when network or IP is restricted
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 5000,
     });
     console.log(`[DB] Connected to MongoDB: ${mongoose.connection.host}`);
   } catch (err) {
     console.warn(`[DB] Warning: Could not connect to MongoDB (${err.message}).`);
-    console.warn('[DB] Operating in resilient persistent local storage mode (data/readings.json). Sensor readings will persist across restarts.');
-    if (process.env.NODE_ENV === 'production' && process.env.STRICT_DB === 'true') {
-      console.error('[DB] STRICT_DB is enabled in production. Exiting process.');
-      process.exit(1);
-    }
+    console.warn('[DB] Operating in resilient persistent storage mode (data/readings.json). Server remains fully functional.');
   }
 }
 
