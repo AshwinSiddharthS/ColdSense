@@ -5,6 +5,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://coldsense-upk4.onrender.com/api/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

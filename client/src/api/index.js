@@ -5,7 +5,7 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-  : (import.meta.env.DEV ? 'http://localhost:5000' : '');
+  : (import.meta.env.DEV ? 'http://localhost:5000' : 'https://coldsense-upk4.onrender.com');
 
 // Local storage keys for user-created shipments and user-registered devices
 const SHIPMENTS_STORAGE_KEY = 'coldchain_shipments_v1';

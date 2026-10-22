@@ -19,6 +19,7 @@
  */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <DHT.h>
 #include <ArduinoJson.h>
@@ -35,9 +36,8 @@ const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
 // ── Backend Configuration ─────────────────────────────────────
-// IMPORTANT: Use your Windows laptop's LAN IPv4 address (e.g., http://192.168.1.100:5000)
-// Do NOT use localhost or 127.0.0.1 on the ESP32!
-const char* SERVER_URL    = "http://192.168.1.100:5000/api/sensors/readings";
+// Connected to your live Render backend
+const char* SERVER_URL    = "https://coldsense-upk4.onrender.com/api/sensors/readings";
 
 // Device Identifier
 const char* DEVICE_ID     = "cold-chain-01";
@@ -144,8 +144,14 @@ void loop() {
 
     // 5. Send HTTP POST to backend
     HTTPClient http;
-    http.begin(SERVER_URL);
-    http.setTimeout(4000); // 4 second timeout prevents blocking
+    WiFiClientSecure secureClient;
+    if (String(SERVER_URL).startsWith("https://")) {
+      secureClient.setInsecure(); // Connect cleanly to Render HTTPS
+      http.begin(secureClient, SERVER_URL);
+    } else {
+      http.begin(SERVER_URL);
+    }
+    http.setTimeout(8000); // 8 second timeout for cloud latency
 
     http.addHeader("Content-Type", "application/json");
     if (strlen(DEVICE_TOKEN) > 0) {
