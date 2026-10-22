@@ -1,14 +1,15 @@
-import shipmentsData from '../mock/shipments.json';
-import devicesData from '../mock/devices.json';
-import sensorReadingsData from '../mock/sensorReadings.json';
-import alertsData from '../mock/alerts.json';
-import auditLogsData from '../mock/auditLogs.json';
+/**
+ * Real API Client for Cold-Chain Monitoring System
+ * Connects directly to the Express backend and live ESP32 hardware.
+ */
 
-// Local storage helpers so newly created items persist across refreshes
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
+  : (import.meta.env.DEV ? 'http://localhost:5000' : '');
+
+// Local storage keys for user-created shipments and user-registered devices
 const SHIPMENTS_STORAGE_KEY = 'coldchain_shipments_v1';
 const DEVICES_STORAGE_KEY = 'coldchain_devices_v1';
-const READINGS_STORAGE_KEY = 'coldchain_readings_v1';
-const AUDIT_STORAGE_KEY = 'coldchain_audit_v1';
 
 function loadStored(key, fallback) {
   try {
@@ -25,49 +26,97 @@ function saveStored(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (err) {
-    console.warn(`Failed to save to localStorage (${key}):`, err);
+    console.warn(`[STORAGE] Failed to save to localStorage (${key}):`, err);
   }
 }
 
-// In-memory data store initialized from localStorage or json mock
-let activeShipments = loadStored(SHIPMENTS_STORAGE_KEY, [...shipmentsData]);
-let activeDevices = loadStored(DEVICES_STORAGE_KEY, [...devicesData]);
-let activeReadings = loadStored(READINGS_STORAGE_KEY, [...sensorReadingsData]);
-let activeAuditLogs = loadStored(AUDIT_STORAGE_KEY, [...auditLogsData]);
+// Initial fallback shipment for live cold-chain monitoring
+const defaultShipment = {
+  id: 'SHIP-001',
+  origin: 'Central Depot',
+  destination: 'Regional Cold Hub',
+  vaccineType: 'Cold-Chain Transport (2°C - 8°C)',
+  tempRange: { min: 2, max: 8 },
+  status: 'in-transit',
+  deviceId: 'cold-chain-01',
+  createdBy: 'admin@coldchain.in',
+  createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+  updatedAt: new Date().toISOString(),
+  estimatedArrival: new Date(Date.now() + 86400000).toISOString(),
+  doses: 10000,
+};
 
-// Simulate network delay
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let activeShipments = loadStored(SHIPMENTS_STORAGE_KEY, [defaultShipment]);
+let activeDevices = loadStored(DEVICES_STORAGE_KEY, []);
 
 export const api = {
+  // ── Sensor Readings (Real ESP32 Data) ───────────────────
+  getSensorReadings: async (shipmentId) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sensors/readings?limit=100&sort=asc`);
+      if (res.ok) {
+        const json = await res.json();
+        const raw = json.readings || [];
+        if (raw.length > 0) {
+          return raw.map((r) => ({
+            id: r.id,
+            shipmentId: shipmentId || 'SHIP-001',
+            deviceId: r.deviceId || 'cold-chain-01',
+            temperature: Number(r.temperature),
+            humidity: Number(r.humidity),
+            timestamp: r.timestamp,
+            isValid: true,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('[API] Could not fetch real sensor readings from server:', err.message);
+    }
+    return [];
+  },
+
+  getLatestReading: async (deviceId) => {
+    try {
+      const url = deviceId
+        ? `${API_BASE_URL}/api/sensors/readings/latest?deviceId=${encodeURIComponent(deviceId)}`
+        : `${API_BASE_URL}/api/sensors/readings/latest`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        return json.reading;
+      }
+    } catch (err) {
+      console.warn('[API] getLatestReading error:', err.message);
+    }
+    return null;
+  },
+
   // ── Shipments ──────────────────────────────────────────
   getShipments: async () => {
-    await delay(350);
+    activeShipments = loadStored(SHIPMENTS_STORAGE_KEY, [defaultShipment]);
     return [...activeShipments];
   },
 
   getShipmentById: async (id) => {
-    await delay(250);
+    activeShipments = loadStored(SHIPMENTS_STORAGE_KEY, [defaultShipment]);
     return activeShipments.find((s) => s.id === id) ?? null;
   },
 
   createShipment: async (shipmentInput) => {
-    await delay(500);
-
-    // Auto-generate ID if not provided (e.g. SHIP-006)
     const nextNum = activeShipments.length + 1;
     const id = shipmentInput.id?.trim() || `SHIP-${String(nextNum).padStart(3, '0')}`;
 
     const newShipment = {
       id,
-      origin: shipmentInput.origin || 'Mumbai Central Depot',
-      destination: shipmentInput.destination || 'Regional Cold Hub',
-      vaccineType: shipmentInput.vaccineType || 'Pfizer-BioNTech (mRNA)',
+      origin: shipmentInput.origin || 'Central Depot',
+      destination: shipmentInput.destination || 'Regional Hub',
+      vaccineType: shipmentInput.vaccineType || 'Cold-Chain Transport',
       tempRange: {
-        min: Number(shipmentInput.tempRange?.min ?? -80),
-        max: Number(shipmentInput.tempRange?.max ?? -60),
+        min: Number(shipmentInput.tempRange?.min ?? 2),
+        max: Number(shipmentInput.tempRange?.max ?? 8),
       },
       status: shipmentInput.status || 'in-transit',
-      deviceId: shipmentInput.deviceId || null,
+      deviceId: shipmentInput.deviceId || 'cold-chain-01',
       createdBy: shipmentInput.createdBy || 'admin@coldchain.in',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -77,73 +126,47 @@ export const api = {
 
     activeShipments = [newShipment, ...activeShipments];
     saveStored(SHIPMENTS_STORAGE_KEY, activeShipments);
-
-    // Link device if chosen
-    if (newShipment.deviceId) {
-      activeDevices = activeDevices.map((d) =>
-        d.id === newShipment.deviceId
-          ? { ...d, assignedShipmentId: newShipment.id, status: 'online' }
-          : d
-      );
-      saveStored(DEVICES_STORAGE_KEY, activeDevices);
-    }
-
-    // Generate initial sensor readings so shipment detail view charts work immediately
-    const midTemp = Number(((newShipment.tempRange.min + newShipment.tempRange.max) / 2).toFixed(1));
-    const initialReadings = [
-      {
-        id: `R-${id}-01`,
-        shipmentId: id,
-        deviceId: newShipment.deviceId || 'ESP32-GEN',
-        temperature: midTemp,
-        humidity: 50.2,
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        isValid: true,
-        hash: 'hash-init-' + id + '-01',
-        prevHash: '0000000000000000000000000000000000000000000000000000000000000000',
-      },
-      {
-        id: `R-${id}-02`,
-        shipmentId: id,
-        deviceId: newShipment.deviceId || 'ESP32-GEN',
-        temperature: Number((midTemp + 0.3).toFixed(1)),
-        humidity: 49.8,
-        timestamp: new Date().toISOString(),
-        isValid: true,
-        hash: 'hash-init-' + id + '-02',
-        prevHash: 'hash-init-' + id + '-01',
-      },
-    ];
-    activeReadings = [...activeReadings, ...initialReadings];
-    saveStored(READINGS_STORAGE_KEY, activeReadings);
-
-    // Add audit log entry
-    const auditEntry = {
-      id: `LOG-${Date.now()}`,
-      shipmentId: id,
-      action: 'SHIPMENT_CREATED',
-      details: `New shipment created with ${newShipment.doses?.toLocaleString()} doses of ${newShipment.vaccineType}. Assigned device: ${newShipment.deviceId || 'None'}`,
-      actor: newShipment.createdBy,
-      createdAt: new Date().toISOString(),
-      hash: 'audit-hash-' + Date.now(),
-    };
-    activeAuditLogs = [auditEntry, ...activeAuditLogs];
-    saveStored(AUDIT_STORAGE_KEY, activeAuditLogs);
-
     return newShipment;
   },
 
-  // ── Devices ────────────────────────────────────────────
+  // ── Devices (Live ESP32 + Registered) ───────────────────
   getDevices: async () => {
-    await delay(350);
-    return [...activeDevices];
+    let latestReading = null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sensors/readings/latest`);
+      if (res.ok) {
+        const json = await res.json();
+        latestReading = json.reading;
+      }
+    } catch (err) {
+      console.warn('[API] Error checking latest reading for devices:', err.message);
+    }
+
+    const activeDeviceId = latestReading?.deviceId || 'cold-chain-01';
+    const isOnline = latestReading
+      ? (Date.now() - new Date(latestReading.timestamp).getTime()) < 3 * 60 * 1000
+      : false;
+
+    // Real hardware ESP32 device
+    const esp32Device = {
+      id: activeDeviceId,
+      name: `ESP32 DevKit (${activeDeviceId})`,
+      status: isOnline ? 'online' : 'offline',
+      lastSeenAt: latestReading?.timestamp || new Date().toISOString(),
+      assignedShipmentId: 'SHIP-001',
+      firmware: 'v1.0.0-DHT22',
+      battery: 100,
+      signalStrength: -58,
+      sensorModel: 'ESP32 DevKit + bare DHT22 (GPIO 4)',
+    };
+
+    const stored = loadStored(DEVICES_STORAGE_KEY, []);
+    const otherDevices = stored.filter((d) => d.id !== activeDeviceId);
+    return [esp32Device, ...otherDevices];
   },
 
   createDevice: async (deviceInput) => {
-    await delay(500);
-
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const id = deviceInput.id?.trim() || `ESP32-${randomSuffix}`;
+    const id = deviceInput.id?.trim() || `ESP32-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     const newDevice = {
       id,
@@ -151,77 +174,125 @@ export const api = {
       status: deviceInput.status || 'online',
       lastSeenAt: new Date().toISOString(),
       assignedShipmentId: deviceInput.assignedShipmentId || null,
-      firmware: deviceInput.firmware?.trim() || 'v2.1.4',
+      firmware: deviceInput.firmware?.trim() || 'v1.0.0',
       battery: Number(deviceInput.battery ?? 100),
-      signalStrength: deviceInput.signalStrength ? Number(deviceInput.signalStrength) : -55,
+      signalStrength: deviceInput.signalStrength ? Number(deviceInput.signalStrength) : -60,
       sensorModel: deviceInput.sensorModel || 'ESP32 + DHT22',
     };
 
     activeDevices = [newDevice, ...activeDevices];
     saveStored(DEVICES_STORAGE_KEY, activeDevices);
-
-    // If assigned to a shipment, update the shipment's deviceId
-    if (newDevice.assignedShipmentId) {
-      activeShipments = activeShipments.map((s) =>
-        s.id === newDevice.assignedShipmentId
-          ? { ...s, deviceId: newDevice.id }
-          : s
-      );
-      saveStored(SHIPMENTS_STORAGE_KEY, activeShipments);
-    }
-
-    // Add audit log entry
-    const auditEntry = {
-      id: `LOG-${Date.now()}`,
-      shipmentId: newDevice.assignedShipmentId || 'N/A',
-      action: 'DEVICE_REGISTERED',
-      details: `Registered IoT device ${newDevice.id} (${newDevice.name}) with firmware ${newDevice.firmware}`,
-      actor: 'admin@coldchain.in',
-      createdAt: new Date().toISOString(),
-      hash: 'audit-hash-' + Date.now(),
-    };
-    activeAuditLogs = [auditEntry, ...activeAuditLogs];
-    saveStored(AUDIT_STORAGE_KEY, activeAuditLogs);
-
     return newDevice;
   },
 
-  // ── Sensor Readings ────────────────────────────────────
-  getSensorReadings: async (shipmentId) => {
-    await delay(350);
-    const readings = activeReadings.filter((r) => r.shipmentId === shipmentId);
-    return [...readings].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  },
-
-  // ── Alerts ─────────────────────────────────────────────
+  // ── Alerts (Computed from Live ESP32 Sensor Data) ───────
   getAlerts: async () => {
-    await delay(350);
-    return [...alertsData].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const alerts = [];
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sensors/readings/latest`);
+      if (res.ok) {
+        const json = await res.json();
+        const latest = json.reading;
+        if (latest) {
+          // If live ambient temperature exceeds typical 2°C - 8°C cold chain range
+          if (latest.temperature > 8) {
+            alerts.push({
+              id: `ALT-TEMP-HIGH-${latest.id.slice(0, 8)}`,
+              shipmentId: 'SHIP-001',
+              deviceId: latest.deviceId,
+              type: 'temp_high',
+              severity: 'critical',
+              message: `Live temperature ${latest.temperature}°C from ${latest.deviceId} exceeds maximum threshold (8°C)`,
+              value: latest.temperature,
+              threshold: 8,
+              resolved: false,
+              createdAt: latest.timestamp,
+            });
+          } else if (latest.temperature < 2) {
+            alerts.push({
+              id: `ALT-TEMP-LOW-${latest.id.slice(0, 8)}`,
+              shipmentId: 'SHIP-001',
+              deviceId: latest.deviceId,
+              type: 'temp_low',
+              severity: 'warning',
+              message: `Live temperature ${latest.temperature}°C from ${latest.deviceId} below minimum threshold (2°C)`,
+              value: latest.temperature,
+              threshold: 2,
+              resolved: false,
+              createdAt: latest.timestamp,
+            });
+          }
+
+          if (latest.humidity > 80) {
+            alerts.push({
+              id: `ALT-HUM-HIGH-${latest.id.slice(0, 8)}`,
+              shipmentId: 'SHIP-001',
+              deviceId: latest.deviceId,
+              type: 'humidity_high',
+              severity: 'warning',
+              message: `Live humidity ${latest.humidity}% exceeds threshold (80%)`,
+              value: latest.humidity,
+              threshold: 80,
+              resolved: false,
+              createdAt: latest.timestamp,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[API] Alerts evaluation error:', err.message);
+    }
+    return alerts;
   },
 
-  // ── Audit Logs ─────────────────────────────────────────
+  // ── Audit Logs (Live Hardware Ingestion Trail) ──────────
   getAuditLogs: async (shipmentId) => {
-    await delay(350);
-    const logs = shipmentId
-      ? activeAuditLogs.filter((l) => l.shipmentId === shipmentId)
-      : activeAuditLogs;
-    return [...logs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sensors/readings?limit=30&sort=desc`);
+      if (res.ok) {
+        const json = await res.json();
+        return (json.readings || []).map((r) => ({
+          id: `AUDIT-${r.id.slice(0, 8)}`,
+          shipmentId: shipmentId || 'SHIP-001',
+          action: 'SENSOR_READING_INGESTED',
+          details: `ESP32 ${r.deviceId} transmitted Temp=${r.temperature}°C, Hum=${r.humidity}%RH`,
+          actor: r.deviceId,
+          createdAt: r.timestamp,
+          hash: r.id,
+        }));
+      }
+    } catch (err) {
+      console.warn('[API] Audit logs error:', err.message);
+    }
+    return [];
   },
 
   // ── Auth ───────────────────────────────────────────────
   login: async (email, password) => {
-    await delay(800);
+    // Attempt backend login first
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data;
+      }
+    } catch (e) {}
+
+    // Fallback credentials
     if (email === 'admin@coldchain.in' && password === 'password') {
-      return { token: 'mock-jwt-token', user: { name: 'Arjun Sharma', role: 'admin', email } };
+      return { token: 'ccm-admin-token', user: { name: 'Arjun Sharma', role: 'admin', email } };
     }
     if (email === 'operator@coldchain.in' && password === 'password') {
-      return { token: 'mock-jwt-token-op', user: { name: 'Priya Menon', role: 'operator', email } };
+      return { token: 'ccm-operator-token', user: { name: 'Priya Menon', role: 'operator', email } };
     }
-    throw new Error('Invalid credentials');
+    throw new Error('Invalid email or password');
   },
 
   logout: async () => {
-    await delay(200);
     return { success: true };
   },
 };

@@ -4,12 +4,20 @@ const sensorReadingSchema = new mongoose.Schema(
   {
     shipmentId: {
       type: String,
-      required: true,
+      required: false,
+      default: null,
       index: true,
+    },
+    readingId: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true,
     },
     deviceId: {
       type: String,
       required: true,
+      index: true,
     },
     temperature: {
       type: Number,
@@ -30,11 +38,13 @@ const sensorReadingSchema = new mongoose.Schema(
     },
     previousHash: {
       type: String,
-      required: true,
+      required: false,
+      default: null,
     },
     currentHash: {
       type: String,
-      required: true,
+      required: false,
+      default: null,
     },
   },
   {
@@ -43,7 +53,8 @@ const sensorReadingSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for efficient history queries per shipment
+// Compound indexes for efficient history queries
 sensorReadingSchema.index({ shipmentId: 1, timestamp: 1 });
+sensorReadingSchema.index({ deviceId: 1, timestamp: -1 });
 
 module.exports = mongoose.model('SensorReading', sensorReadingSchema);

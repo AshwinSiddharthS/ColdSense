@@ -13,11 +13,21 @@ export default function DevicesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [successToast, setSuccessToast] = useState(null);
 
-  useEffect(() => {
-    api.getDevices().then((data) => {
+  const fetchDevices = async () => {
+    try {
+      const data = await api.getDevices();
       setDevices(data);
+    } catch (err) {
+      console.warn('[DevicesPage] Fetch error:', err);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchDevices();
+    const interval = setInterval(fetchDevices, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleDeviceCreated = (created) => {

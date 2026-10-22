@@ -18,12 +18,22 @@ export default function AuditLogPage() {
   const [shipmentIds, setShipmentIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([api.getAuditLogs(), api.getShipments()]).then(([l, s]) => {
+  const fetchLogs = async () => {
+    try {
+      const [l, s] = await Promise.all([api.getAuditLogs(), api.getShipments()]);
       setLogs(l);
       setShipmentIds(s.map((x) => x.id));
+    } catch (err) {
+      console.warn('[AuditLogPage] Fetch error:', err);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = shipmentFilter === 'all'

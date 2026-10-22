@@ -75,19 +75,30 @@ export default function DashboardPage() {
   const [deviceModalOpen, setDeviceModalOpen] = useState(false);
   const [successToast, setSuccessToast] = useState(null);
 
-  useEffect(() => {
-    Promise.all([
-      api.getSensorReadings('SHIP-001'),
-      api.getShipments(),
-      api.getAlerts(),
-      api.getDevices(),
-    ]).then(([r, s, a, d]) => {
+  const fetchDashboardData = async () => {
+    try {
+      const [r, s, a, d] = await Promise.all([
+        api.getSensorReadings('SHIP-001'),
+        api.getShipments(),
+        api.getAlerts(),
+        api.getDevices(),
+      ]);
       setReadings(r);
       setShipments(s);
       setAlerts(a);
       setDevices(d);
+    } catch (err) {
+      console.warn('[Dashboard] Live data fetch error:', err);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+    // Poll every 3.5 seconds to reflect live ESP32 transmissions in real-time
+    const timer = setInterval(fetchDashboardData, 3500);
+    return () => clearInterval(timer);
   }, []);
 
   const handleShipmentCreated = (newShipment) => {
@@ -174,8 +185,8 @@ export default function DashboardPage() {
           value={latest?.temperature ?? '--'}
           unit="°C"
           icon={Thermometer}
-          color={latest && latest.temperature > -60 ? 'red' : 'green'}
-          sub="SHIP-001 · ESP32-A1B2"
+          color={latest && (latest.temperature > 8 || latest.temperature < 2) ? 'amber' : 'green'}
+          sub={`${latest?.deviceId || 'cold-chain-01'} · Live ESP32`}
         />
         <StatCard
           label="Latest Humidity"
@@ -183,7 +194,7 @@ export default function DashboardPage() {
           unit="%"
           icon={Droplets}
           color="violet"
-          sub="SHIP-001 · ESP32-A1B2"
+          sub={`${latest?.deviceId || 'cold-chain-01'} · Live ESP32`}
         />
         <StatCard
           label="Active Alerts"
@@ -202,9 +213,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-sm font-semibold text-slate-200">Temperature Over Time</h2>
-              <p className="text-xs text-slate-500">SHIP-001 · Last 8 readings</p>
+              <p className="text-xs text-slate-500">Live ESP32 Stream · {readings.length} readings</p>
             </div>
-            <Badge variant="blue">SHIP-001</Badge>
+            <Badge variant="blue">{latest?.deviceId || 'cold-chain-01'}</Badge>
           </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
@@ -222,10 +233,8 @@ export default function DashboardPage() {
                   stroke="#475569"
                   tick={{ fontSize: 10, fill: '#64748b' }}
                 />
-                <YAxis stroke="#475569" tick={{ fontSize: 10, fill: '#64748b' }} />
+                <YAxis stroke="#475569" tick={{ fontSize: 10, fill: '#64748b' }} domain={['auto', 'auto']} />
                 <Tooltip content={<CustomTooltip />} />
-                <ReferenceLine y={-60} stroke="#ef4444" strokeDasharray="4 4" label={{ value: 'Max', fill: '#ef4444', fontSize: 10 }} />
-                <ReferenceLine y={-80} stroke="#f97316" strokeDasharray="4 4" label={{ value: 'Min', fill: '#f97316', fontSize: 10 }} />
                 <Area type="monotone" dataKey="temperature" name="Temp" stroke="#3b82f6" strokeWidth={2} fill="url(#tempGrad)" dot={{ r: 3, fill: '#3b82f6' }} activeDot={{ r: 5 }} />
               </AreaChart>
             </ResponsiveContainer>
@@ -237,9 +246,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-sm font-semibold text-slate-200">Humidity Over Time</h2>
-              <p className="text-xs text-slate-500">SHIP-001 · Last 8 readings</p>
+              <p className="text-xs text-slate-500">Live ESP32 Stream · {readings.length} readings</p>
             </div>
-            <Badge variant="purple">SHIP-001</Badge>
+            <Badge variant="purple">{latest?.deviceId || 'cold-chain-01'}</Badge>
           </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
@@ -257,7 +266,7 @@ export default function DashboardPage() {
                   stroke="#475569"
                   tick={{ fontSize: 10, fill: '#64748b' }}
                 />
-                <YAxis stroke="#475569" tick={{ fontSize: 10, fill: '#64748b' }} domain={[30, 70]} />
+                <YAxis stroke="#475569" tick={{ fontSize: 10, fill: '#64748b' }} domain={[0, 100]} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="humidity" name="Humidity" stroke="#a78bfa" strokeWidth={2} fill="url(#humGrad)" dot={{ r: 3, fill: '#a78bfa' }} activeDot={{ r: 5 }} />
               </AreaChart>

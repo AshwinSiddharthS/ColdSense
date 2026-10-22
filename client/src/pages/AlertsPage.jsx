@@ -16,11 +16,21 @@ export default function AlertsPage() {
   const [filter, setFilter] = useState('all'); // 'all' | 'active' | 'resolved'
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api.getAlerts().then((data) => {
+  const fetchAlerts = async () => {
+    try {
+      const data = await api.getAlerts();
       setAlerts(data);
+    } catch (err) {
+      console.warn('[AlertsPage] Fetch error:', err);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = alerts.filter((a) => {

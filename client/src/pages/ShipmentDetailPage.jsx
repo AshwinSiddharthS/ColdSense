@@ -34,12 +34,22 @@ export default function ShipmentDetailPage() {
   const [readings, setReadings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([api.getShipmentById(id), api.getSensorReadings(id)]).then(([s, r]) => {
+  const fetchShipmentData = async () => {
+    try {
+      const [s, r] = await Promise.all([api.getShipmentById(id), api.getSensorReadings(id)]);
       setShipment(s);
       setReadings(r);
+    } catch (err) {
+      console.warn('[ShipmentDetail] Fetch error:', err);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchShipmentData();
+    const interval = setInterval(fetchShipmentData, 3500);
+    return () => clearInterval(interval);
   }, [id]);
 
   if (loading) return <PageLoader />;

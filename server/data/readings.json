@@ -1,0 +1,44 @@
+[
+  {
+    "id": "9c4a937b-5e9e-4892-bb41-17f50f0c3b2d",
+    "deviceId": "TEST-DEV",
+    "temperature": 1,
+    "humidity": 40,
+    "timestamp": "2026-10-22T08:00:00.000Z"
+  },
+  {
+    "id": "34196723-adda-4f2d-a0b6-362031d556b0",
+    "deviceId": "TEST-DEV",
+    "temperature": 2,
+    "humidity": 42,
+    "timestamp": "2026-10-22T09:00:00.000Z"
+  },
+  {
+    "id": "c53fea52-6802-41aa-9217-056a03657d7b",
+    "deviceId": "cold-chain-01",
+    "temperature": 30.2,
+    "humidity": 77.4,
+    "timestamp": "2026-10-22T18:21:49.916Z"
+  },
+  {
+    "id": "a8b223da-129a-4d17-ac53-1628b8b3e552",
+    "deviceId": "cold-chain-01",
+    "temperature": 30.2,
+    "humidity": 77.4,
+    "timestamp": "2026-10-22T18:21:52.157Z"
+  },
+  {
+    "id": "7fda0016-35e9-47c6-b9a7-02c5d36772cb",
+    "deviceId": "cold-chain-01",
+    "temperature": 30.2,
+    "humidity": 77.4,
+    "timestamp": "2026-10-22T18:21:57.265Z"
+  },
+  {
+    "id": "0cd82ea2-0a28-478e-96e5-15cfd658abef",
+    "deviceId": "cold-chain-01",
+    "temperature": 30.2,
+    "humidity": 77.4,
+    "timestamp": "2026-10-22T18:22:02.399Z"
+  }
+]
